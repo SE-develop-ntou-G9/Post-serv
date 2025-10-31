@@ -1,8 +1,8 @@
 from fastapi import FastAPI, APIRouter
-from infrastructure.database import engine, database
-from domain.product import Base
 from fastapi.middleware.cors import CORSMiddleware
-from API.post_route import router as product_router
+from infrastructure.database import engine, database  # engine: SQLAlchemy Engine, database: databases.Database
+from domain.driverPost import Base
+from API.post_route import router as post_router
 
 app = FastAPI()
 
@@ -16,22 +16,19 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup():
-    try:
-        await database.connect()
-        Base.metadata.create_all(bind=engine)
-        print("Database connected successfully.")
-    except Exception as e:
-        print(f"Database connection error: {e}")
+    # 先確保 schema 存在（同步 create_all 用 sync engine 沒問題）
+    Base.metadata.create_all(bind=engine)
+    # 再連 databases（非同步）
+    await database.connect()
+    print("Database connected successfully.")
 
 @app.on_event("shutdown")
 async def shutdown():
     await database.disconnect()
     print("Database disconnected successfully.")
 
-router = APIRouter()
-@router.get("/", response_model=str)
-async def demo():
-    return "hello NTOUber!"
 
-app.include_router(router, prefix="/api")
-app.include_router(product_router, prefix="/api/product", tags=["Products"])
+app.include_router(post_router, prefix="/api/posts")
+
+for route in app.routes:
+    print(route.path)
