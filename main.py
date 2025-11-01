@@ -6,9 +6,14 @@ from API.post_route import router as post_router
 
 app = FastAPI()
 
+ALLOWED_ORIGINS = [
+    "http://localhost:5173/",
+    "https://ntouber.zeabur.app",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
