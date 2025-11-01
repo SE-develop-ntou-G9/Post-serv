@@ -3,11 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from infrastructure.database import engine, database  # engine: SQLAlchemy Engine, database: databases.Database
 from domain.driverPost import Base
 from API.post_route import router as post_router
+from starlette.responses import Response
 
 app = FastAPI()
 
 ALLOWED_ORIGINS = [
-    "http://localhost:5173/",
+    "http://localhost:5173",
     "https://ntouber.zeabur.app",
 ]
 
@@ -34,6 +35,3 @@ async def shutdown():
 
 
 app.include_router(post_router, prefix="/api/posts")
-
-for route in app.routes:
-    print(route.path)
