@@ -7,6 +7,8 @@ from starlette.responses import Response
 
 app = FastAPI()
 
+app.router.redirect_slashes = False
+
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "https://ntouber.zeabur.app",
@@ -32,6 +34,12 @@ async def startup():
 async def shutdown():
     await database.disconnect()
     print("Database disconnected successfully.")
+
+
+@app.options("/{path:path}")
+async def options_handler(path: str):
+    return Response(status_code=204)
+
 
 
 app.include_router(post_router, prefix="/api/posts")
