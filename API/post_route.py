@@ -10,5 +10,5 @@ async def create_driver_post(dto: DriverPostDTO):
     try:
         driver_post_id = await DriverPostRepository.create_driver_post(data)
         return driver_post_id
-    except DriverPostRepository as e:
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
