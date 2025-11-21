@@ -1,3 +1,35 @@
+# Python virtual environments
+.venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Env files
+.env
+.env.*
+
+# VS Code
+.vscode/
+
+# IDEs
+.idea/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+
+# Pytest cache
+.pytest_cache/
 .htaccess
 css.php
 rpc/

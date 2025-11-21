@@ -18,3 +18,9 @@ class DriverPostRepository:
             query = insert(DriverPost).values(**driver_post)
             await database.execute(query)
             return "successfully created driver post with id " + str(driver_post["driver_id"])
+        
+    @staticmethod
+    async def get_all_driver_posts():
+        query = select(DriverPost)
+        rows = await database.fetch_all(query)
+        return [dict(r) for r in rows]  # 轉成 list[dict]
