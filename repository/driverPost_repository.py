@@ -12,12 +12,15 @@ class DriverPostRepository:
         post = await database.fetch_one(query)
 
         if post:
-            # 既然是錯誤情況，就丟例外，不要回傳字串
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f'Driver post with id {driver_post["driver_id"]} already exists.'
-            )
+            return f'Driver post with id {driver_post["driver_id"]} already exists.'
+        else:
+            query = insert(DriverPost).values(**driver_post)
+            await database.execute(query)
+            return "successfully created driver post with id " + str(driver_post["driver_id"])
+        
+    @staticmethod
+    async def get_all_driver_posts():
+        query = select(DriverPost)
+        rows = await database.fetch_all(query)
+        return [dict(r) for r in rows]  # 轉成 list[dict]
 
-        stmt = insert(DriverPost).values(**driver_post)
-        await database.execute(stmt)
-        return f'successfully created driver post with id {driver_post["driver_id"]}'
