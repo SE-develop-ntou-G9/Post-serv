@@ -7,20 +7,31 @@ from domain.driverPost import DriverPost
 class DriverPostRepository:
     @staticmethod
     async def create_driver_post(driver_post: dict) -> str:
-        # 先查是否存在（注意：這有競態問題，見下方「更健全」作法）
-        query = select(DriverPost).where(DriverPost.driver_id == driver_post["driver_id"])
-        post = await database.fetch_one(query)
-
-        if post:
-            return f'Driver post with id {driver_post["driver_id"]} already exists.'
-        else:
-            query = insert(DriverPost).values(**driver_post)
+        query = insert(DriverPost).values(**driver_post)
+        try:
             await database.execute(query)
-            return "successfully created driver post with id " + str(driver_post["driver_id"])
+            return driver_post["id"]
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to create driver post: {str(e)}"
+            )
         
     @staticmethod
     async def get_all_driver_posts():
         query = select(DriverPost)
         rows = await database.fetch_all(query)
         return [dict(r) for r in rows]  # 轉成 list[dict]
+    
+    @staticmethod
+    async def get_post_by_id(post_id: str):
+        query = select(DriverPost).where(DriverPost.id == post_id)
+        row = await database.fetch_one(query)
+        if row:
+            return dict(row)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Driver post not found"
+            )
 
