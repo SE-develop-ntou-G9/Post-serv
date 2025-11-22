@@ -9,7 +9,7 @@ Base = declarative_base()
 class DriverPost(Base):
     __tablename__ = 'driver_posts'
 
-    id = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    id = Column(String(36), primary_key=True, autoincrement=False)
 
     driver_id = Column(String(255), nullable=False, index=True)
     vehicle_info = Column(String(255), nullable=True)
