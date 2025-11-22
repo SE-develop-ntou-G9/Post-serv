@@ -33,3 +33,19 @@ async def get_post_by_id(post_id: str):
         return DriverPostDTO.model_validate(driver_post)  # Pydantic v2
     except HTTPException as http_exc:
         raise http_exc
+    
+@router.delete("/deleteall", response_class=PlainTextResponse)
+async def delete_all_post():
+    try:
+        await DriverPostRepository.delete_all_post()
+        return "All driver posts deleted successfully."
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@router.delete("/delete/{post_id}", response_class=PlainTextResponse)
+async def delete_post_by_id(post_id: str):
+    try:
+        await DriverPostRepository.delete_post_by_id(post_id)
+        return f"Driver post with id {post_id} deleted successfully."
+    except HTTPException as http_exc:
+        raise http_exc
