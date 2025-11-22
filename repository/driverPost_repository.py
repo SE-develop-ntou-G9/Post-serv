@@ -1,6 +1,6 @@
 # repository/driverPost_repository.py
 from fastapi import HTTPException, status
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, delete
 from infrastructure.database import database
 from domain.driverPost import DriverPost
 
@@ -33,5 +33,34 @@ class DriverPostRepository:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Driver post not found"
+            )
+        
+    @staticmethod
+    async def delete_all_post():
+        query = delete(DriverPost)
+        try:
+            await database.execute(query)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete driver posts: {str(e)}"
+            )
+        
+    @staticmethod
+    async def delete_post_by_id(post_id: str):
+        query = delete(DriverPost).where(DriverPost.id == post_id)
+        try:
+            result = await database.execute(query)
+            if result == 0:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Driver post not found"
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete driver post: {str(e)}"
             )
 
