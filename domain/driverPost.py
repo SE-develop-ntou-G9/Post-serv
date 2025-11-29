@@ -12,6 +12,7 @@ class DriverPost(Base):
     id = Column(String(36), primary_key=True, autoincrement=False)
 
     driver_id = Column(String(255), nullable=False, index=True)
+    client_id = Column(String(255), nullable=False, index=True)
     vehicle_info = Column(String(255), nullable=True)
 
     status = Column(
