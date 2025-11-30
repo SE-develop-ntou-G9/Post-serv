@@ -43,6 +43,16 @@ async def search_by_destination_name(
 ):
     posts = await DriverPostRepository.search_by_destination_name(name, partial=partial, limit=limit, offset=offset)
     return [DriverPostDTO.model_validate(p) for p in posts]
+
+@router.get("/search/by-address", response_model=List[DriverPostDTO])
+async def search_by_destination_name(
+    address: str = Query(..., description="目的地名稱(搜尋用)"),
+    partial: bool = Query(False, description="是否模糊搜尋"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+):
+    posts = await DriverPostRepository.search_by_destination_address(address, partial=partial, limit=limit, offset=offset)
+    return [DriverPostDTO.model_validate(p) for p in posts]
     
 @router.delete("/deleteall", response_class=PlainTextResponse)
 async def delete_all_post():

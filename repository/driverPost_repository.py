@@ -66,6 +66,39 @@ class DriverPostRepository:
         )
         rows = await database.fetch_all(query)
         return [dict(r) for r in rows]
+    
+    @staticmethod
+    async def search_by_destination_address(address: str, partial: bool = False,
+                                         case_insensitive: bool = True,
+                                         limit: int = 50, offset: int = 0):
+        # JSON_EXTRACT(destination, '$.address') -> JSON string, use JSON_UNQUOTE to remove quotes
+        address_expr = func.json_unquote(func.json_extract(DriverPost.destination, '$.Address'))
+
+        if case_insensitive:
+            # compare lower(address_expr) with lower(param)
+            if partial:
+                pattern = f"%{address.lower()}%"
+                cond = func.lower(address_expr).like(pattern)
+            else:
+                cond = func.lower(address_expr) == address.lower()
+        else:
+            if partial:
+                pattern = f"%{address}%"
+                cond = address_expr.like(pattern)
+            else:
+                cond = address_expr == address
+
+        query = (
+            select(DriverPost)
+            .where(cond)
+            .order_by(DriverPost.id)
+            .limit(limit)
+            .offset(offset)
+        )
+        rows = await database.fetch_all(query)
+        return [dict(r) for r in rows]
+    
+    
 
 
     @staticmethod
