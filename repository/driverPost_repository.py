@@ -1,6 +1,7 @@
-# repository/driverPost_repository.py
-from fastapi import HTTPException, status
-from sqlalchemy import select, insert, delete
+from sqlalchemy.sql import insert, delete, select, update
+from sqlalchemy.orm import Session
+from sqlalchemy import func, or_, update
+from fastapi import FastAPI, HTTPException
 from infrastructure.database import database
 from domain.driverPost import DriverPost
 
@@ -35,6 +36,38 @@ class DriverPostRepository:
                 detail="Driver post not found"
             )
         
+    @staticmethod
+    async def search_by_destination_name(name: str, partial: bool = False,
+                                         case_insensitive: bool = True,
+                                         limit: int = 50, offset: int = 0):
+        # JSON_EXTRACT(destination, '$.name') -> JSON string, use JSON_UNQUOTE to remove quotes
+        name_expr = func.json_unquote(func.json_extract(DriverPost.destination, '$.Name'))
+
+        if case_insensitive:
+            # compare lower(name_expr) with lower(param)
+            if partial:
+                pattern = f"%{name.lower()}%"
+                cond = func.lower(name_expr).like(pattern)
+            else:
+                cond = func.lower(name_expr) == name.lower()
+        else:
+            if partial:
+                pattern = f"%{name}%"
+                cond = name_expr.like(pattern)
+            else:
+                cond = name_expr == name
+
+        query = (
+            select(DriverPost)
+            .where(cond)
+            .order_by(DriverPost.id)
+            .limit(limit)
+            .offset(offset)
+        )
+        rows = await database.fetch_all(query)
+        return [dict(r) for r in rows]
+
+
     @staticmethod
     async def delete_all_post():
         query = delete(DriverPost)
