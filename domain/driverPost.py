@@ -1,5 +1,6 @@
 from sqlalchemy import (
     Column, String, Enum, DateTime, Boolean, Text, Integer, JSON, Index, func
+    , text
 )
 from sqlalchemy.dialects.mysql import JSON as MySQLJSON
 from sqlalchemy.ext.declarative import declarative_base
@@ -12,6 +13,7 @@ class DriverPost(Base):
     id = Column(String(36), primary_key=True, autoincrement=False)
 
     driver_id = Column(String(255), nullable=False, index=True)
+    client_id = Column(String(255), nullable=False, index=True, server_default=text("'unknown'"))
     vehicle_info = Column(String(255), nullable=True)
 
     status = Column(
