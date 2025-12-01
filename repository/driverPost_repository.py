@@ -37,6 +37,19 @@ class DriverPostRepository:
             )
         
     @staticmethod
+    async def get_post_by_driver_id(driver_id: str):
+        query = select(DriverPost).where(DriverPost.driver_id == driver_id)
+        try:
+            rows = await database.fetch_all(query)
+            if rows:
+                return [dict(r) for r in rows]
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete driver posts: {str(e)}"
+            )
+        
+    @staticmethod
     async def search_by_destination_name(name: str, partial: bool = False,
                                          case_insensitive: bool = True,
                                          limit: int = 50, offset: int = 0):

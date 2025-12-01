@@ -22,7 +22,8 @@ async def create_driver_post(dto: DriverPostDTO):
 async def get_all_driver_post():
     try:
         driver_post = await DriverPostRepository.get_all_driver_posts()
-        return [DriverPostDTO.model_validate(p) for p in driver_post]  # Pydantic v2
+        # validate and return plain dicts to satisfy FastAPI's response validation
+        return [DriverPostDTO.model_validate(p).model_dump() for p in driver_post]
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -30,10 +31,19 @@ async def get_all_driver_post():
 async def get_post_by_id(post_id: str):
     try:
         driver_post = await DriverPostRepository.get_post_by_id(post_id)
-        return DriverPostDTO.model_validate(driver_post)  # Pydantic v2
+        return DriverPostDTO.model_validate(driver_post).model_dump()
     except HTTPException as http_exc:
         raise http_exc
     
+@router.get("/search/{driver_id}", response_model=List[DriverPostDTO])
+async def get_post_by_id(driver_id: str):
+    try:
+        driver_post = await DriverPostRepository.get_post_by_driver_id(driver_id)
+        return [DriverPostDTO.model_validate(p).model_dump() for p in driver_post]
+    except HTTPException as http_exc:
+        raise http_exc
+    
+
 @router.get("/search/by-name", response_model=List[DriverPostDTO])
 async def search_by_destination_name(
     name: str = Query(..., description="目的地名稱(搜尋用)"),
@@ -42,7 +52,7 @@ async def search_by_destination_name(
     offset: int = Query(0, ge=0),
 ):
     posts = await DriverPostRepository.search_by_destination_name(name, partial=partial, limit=limit, offset=offset)
-    return [DriverPostDTO.model_validate(p) for p in posts]
+    return [DriverPostDTO.model_validate(p).model_dump() for p in posts]
 
 @router.get("/search/by-address", response_model=List[DriverPostDTO])
 async def search_by_destination_name(
@@ -52,7 +62,7 @@ async def search_by_destination_name(
     offset: int = Query(0, ge=0),
 ):
     posts = await DriverPostRepository.search_by_destination_address(address, partial=partial, limit=limit, offset=offset)
-    return [DriverPostDTO.model_validate(p) for p in posts]
+    return [DriverPostDTO.model_validate(p).model_dump() for p in posts]
     
 @router.delete("/deleteall", response_class=PlainTextResponse)
 async def delete_all_post():
