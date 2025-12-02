@@ -1,6 +1,8 @@
 from sqlalchemy.sql import insert, delete, select, update
 from sqlalchemy.orm import Session
-from sqlalchemy import func, or_, update
+from sqlalchemy import func, or_, and_, update, true
+from datetime import datetime
+from typing import Optional
 from fastapi import FastAPI, HTTPException
 from infrastructure.database import database
 from domain.driverPost import DriverPost
@@ -50,26 +52,78 @@ class DriverPostRepository:
             )
         
     @staticmethod
-    async def search_destination(keyname: str, partial: bool = False,
-                                         case_insensitive: bool = True,
-                                         limit: int = 50, offset: int = 0):
-        # name_expr = func.json_unquote(func.json_extract(DriverPost.destination, '$.Name'))
+    async def search_destination(
+        start_point: Optional[str] = None,
+        end_point: Optional[str] = None,
+        time: Optional[datetime] = None,
+        partial: bool = False,
+        limit: int = 50,
+        offset: int = 0,
+    ):
+        str_name = func.json_unquote(func.json_extract(DriverPost.start_point, '$.Name'))
+        str_address = func.json_unquote(func.json_extract(DriverPost.start_point, '$.Address'))
         des_name = func.json_unquote(func.json_extract(DriverPost.destination, '$.Name'))
         des_address = func.json_unquote(func.json_extract(DriverPost.destination, '$.Address'))
 
-        if case_insensitive:
-            # compare lower(name_expr) with lower(param)
+        filters = []
+        if start_point is None and end_point is None and time is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one search parameter (start_point, end_point, time) must be provided."
+            )
+        if start_point and end_point and time:
             if partial:
-                pattern = f"%{keyname.lower()}%"
-                cond = or_(func.lower(des_name).like(pattern), func.lower(des_address).like(pattern))
+                filters.append(
+                    and_(
+                        or_(
+                            func.lower(str_name).like(f"%{start_point.lower()}%"),
+                            func.lower(str_address).like(f"%{start_point.lower()}%"),
+                        ),
+                        or_(
+                            func.lower(des_name).like(f"%{end_point.lower()}%"),
+                            func.lower(des_address).like(f"%{end_point.lower()}%"),
+                        ),
+                        DriverPost.departure_time >= time,
+                        DriverPost.departure_time <= time + timedelta(hours=5)
+                    )
+                )
             else:
-                cond = or_(func.lower(des_name) == keyname.lower(), func.lower(des_address) == keyname.lower())
-        else:
+                filters.append(
+                    and_(
+                        or_(str_name == start_point, str_address == start_point),
+                        or_(des_name == end_point, des_address == end_point),
+                        DriverPost.departure_time >= time,
+                        DriverPost.departure_time <= time + timedelta(hours=5)
+                    )
+                )
+
+        if start_point:
             if partial:
-                pattern = f"%{keyname}%"
-                cond = or_(des_name.like(pattern), des_address.like(pattern))
+                filters.append(
+                    or_(
+                        func.lower(str_name).like(f"%{start_point.lower()}%"),
+                        func.lower(str_address).like(f"%{start_point.lower()}%"),
+                    )
+                )
             else:
-                cond = or_(des_name == keyname, des_address == keyname)
+                filters.append(or_(str_name == start_point, str_address == start_point))
+
+        if end_point:
+            if partial:
+                filters.append(
+                    or_(
+                        func.lower(des_name).like(f"%{end_point.lower()}%"),
+                        func.lower(des_address).like(f"%{end_point.lower()}%"),
+                    )
+                )
+            else:
+                filters.append(or_(des_name == end_point, des_address == end_point))
+
+        if time:
+            filters.append(DriverPost.departure_time >= time)
+            filters.append(DriverPost.departure_time <= time + timedelta(hours=5))
+
+        cond = and_(*filters) if filters else true()
 
         query = (
             select(DriverPost)
