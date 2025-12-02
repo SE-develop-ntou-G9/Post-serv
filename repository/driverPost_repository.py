@@ -50,25 +50,26 @@ class DriverPostRepository:
             )
         
     @staticmethod
-    async def search_by_destination_name(name: str, partial: bool = False,
+    async def search_destination(keyname: str, partial: bool = False,
                                          case_insensitive: bool = True,
                                          limit: int = 50, offset: int = 0):
-        # JSON_EXTRACT(destination, '$.name') -> JSON string, use JSON_UNQUOTE to remove quotes
-        name_expr = func.json_unquote(func.json_extract(DriverPost.destination, '$.Name'))
+        # name_expr = func.json_unquote(func.json_extract(DriverPost.destination, '$.Name'))
+        des_name = func.json_unquote(func.json_extract(DriverPost.destination, '$.Name'))
+        des_address = func.json_unquote(func.json_extract(DriverPost.destination, '$.Address'))
 
         if case_insensitive:
             # compare lower(name_expr) with lower(param)
             if partial:
-                pattern = f"%{name.lower()}%"
-                cond = func.lower(name_expr).like(pattern)
+                pattern = f"%{keyname.lower()}%"
+                cond = or_(func.lower(des_name).like(pattern), func.lower(des_address).like(pattern))
             else:
-                cond = func.lower(name_expr) == name.lower()
+                cond = or_(func.lower(des_name) == keyname.lower(), func.lower(des_address) == keyname.lower())
         else:
             if partial:
-                pattern = f"%{name}%"
-                cond = name_expr.like(pattern)
+                pattern = f"%{keyname}%"
+                cond = or_(des_name.like(pattern), des_address.like(pattern))
             else:
-                cond = name_expr == name
+                cond = or_(des_name == keyname, des_address == keyname)
 
         query = (
             select(DriverPost)
@@ -80,39 +81,6 @@ class DriverPostRepository:
         rows = await database.fetch_all(query)
         return [dict(r) for r in rows]
     
-    @staticmethod
-    async def search_by_destination_address(address: str, partial: bool = False,
-                                         case_insensitive: bool = True,
-                                         limit: int = 50, offset: int = 0):
-        # JSON_EXTRACT(destination, '$.address') -> JSON string, use JSON_UNQUOTE to remove quotes
-        address_expr = func.json_unquote(func.json_extract(DriverPost.destination, '$.Address'))
-
-        if case_insensitive:
-            # compare lower(address_expr) with lower(param)
-            if partial:
-                pattern = f"%{address.lower()}%"
-                cond = func.lower(address_expr).like(pattern)
-            else:
-                cond = func.lower(address_expr) == address.lower()
-        else:
-            if partial:
-                pattern = f"%{address}%"
-                cond = address_expr.like(pattern)
-            else:
-                cond = address_expr == address
-
-        query = (
-            select(DriverPost)
-            .where(cond)
-            .order_by(DriverPost.id)
-            .limit(limit)
-            .offset(offset)
-        )
-        rows = await database.fetch_all(query)
-        return [dict(r) for r in rows]
-    
-    
-
 
     @staticmethod
     async def delete_all_post():
