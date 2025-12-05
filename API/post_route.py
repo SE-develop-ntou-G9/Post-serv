@@ -51,10 +51,18 @@ async def search_destination(
     end_point: str | None = Query(None),
     time: datetime | None = Query(None), 
     partial: bool = Query(False),
-    limit: int = Query(50, ge=1),
-    offset: int = Query(0, ge=0),
 ):
-    posts = await DriverPostRepository.search_destination(start_point, end_point,time, partial=partial, limit=limit, offset=offset)
+    # Normalize empty strings (e.g. ?start_point=) to None so repository treats them as omitted
+    def _norm(s: str | None) -> str | None:
+        if s is None:
+            return None
+        s2 = s.strip()
+        return s2 if s2 != "" else None
+
+    start_point = _norm(start_point)
+    end_point = _norm(end_point)
+
+    posts = await DriverPostRepository.search_destination(start_point, end_point, time, partial=partial)
     return [DriverPostDTO.model_validate(p).model_dump() for p in posts]
     
 @router.delete("/deleteall", response_class=PlainTextResponse)
