@@ -35,6 +35,7 @@ class DriverPost(Base):
     helmet = Column(Boolean, nullable=False, server_default="0")
     contact = Column(MySQLJSON, nullable=False)  # contact_info
     leave = Column(Boolean, nullable=False, server_default="0")
+    image_url = Column(String(2083), nullable=True)
 
     __table_args__ = (
         Index("ix_driver_posts_driver_status", "driver_id", "status"),
