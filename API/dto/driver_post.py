@@ -19,8 +19,13 @@ class DriverPostDTO(BaseModel):
     helmet: bool = False
     contact: Dict[str, str] = Field(..., alias="contact_info")
     leave: bool = False
+    image_url: Optional[str] = None
 
     model_config = {
         "populate_by_name": True,
         "from_attributes": True,
     }
+
+class UploadImageResponse(BaseModel):
+    message: str
+    image_url: str | None = None
