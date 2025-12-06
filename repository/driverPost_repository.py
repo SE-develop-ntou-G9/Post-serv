@@ -6,6 +6,22 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, status
 from infrastructure.database import database
 from domain.driverPost import DriverPost
+import boto3
+from loguru import logger
+import filetype
+from uuid import uuid4
+import os
+
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    region_name=os.getenv("aws_region")
+)
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 class DriverPostRepository:
     @staticmethod
@@ -153,4 +169,56 @@ class DriverPostRepository:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to delete driver post: {str(e)}"
             )
+        
+    @staticmethod
+    async def s3_upload(contents: bytes, key: str, content_type: str, acl: str = "private", server_side_encryption: str = "AES256",) -> str:
+        logger.info(f"Uploading file to S3 with key: {key} and ACL: {acl}")
+        try:
+            s3.put_object(
+                Bucket=os.getenv("s3_bucket_name"),
+                Key=key,
+                Body=contents,
+                ContentType=content_type,
+                ACL=acl,
+                ServerSideEncryption=server_side_encryption,
+            )
+            logger.info(f"File successfully uploaded to S3 with key: {key}")
 
+            bucket_name = os.getenv("s3_bucket_name")
+            region = os.getenv("aws_region")
+            image_url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{key}"
+
+            return image_url
+
+        except Exception as e:
+            logger.error(f"Failed to upload file to S3: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to upload file to S3",
+            )
+
+
+    
+    @staticmethod
+    async def upload_image(post_id: str, image_url: str):
+
+        query = (
+            update(DriverPost)
+            .where(DriverPost.id == post_id)
+            .values(image_url=image_url)
+        )
+        try:
+            result = await database.execute(query)
+            if result == 0:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Driver post not found"
+                )
+            return image_url
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to upload image: {str(e)}"
+            )

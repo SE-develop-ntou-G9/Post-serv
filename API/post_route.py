@@ -1,10 +1,17 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, UploadFile
 from fastapi.responses import PlainTextResponse
 from typing import List
-from API.dto.driver_post import DriverPostDTO
+from API.dto.driver_post import DriverPostDTO, UploadImageResponse
 from repository.driverPost_repository import DriverPostRepository
 from datetime import datetime
 import uuid
+import filetype
+
+SUPPORTED_FILE_TYPES = {
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'jpg': 'image/jpg'
+}
 
 router = APIRouter()
 
@@ -80,3 +87,31 @@ async def delete_post_by_id(post_id: str):
         return f"Driver post with id {post_id} deleted successfully."
     except HTTPException as http_exc:
         raise http_exc
+    
+@router.patch("/upload_image", response_model=UploadImageResponse)
+async def upload_image(post_id: str, file: UploadFile | None = None):
+    if not file:
+        return {"message": "No file uploaded."}
+    contents = await file.read()
+    size = len(contents)
+
+    if not 0 < size <= 5 * 1024 * 1024:
+        return {"message": "File size must be between 0 and 5MB."}
+    
+    kind = filetype.guess(contents)
+    if kind is None or kind.extension not in SUPPORTED_FILE_TYPES:
+        return {"message": "Unsupported file type."}
+    
+    folder = "driver_posts"
+
+    file_name = f'{folder}/{post_id}_{uuid.uuid4()}.{kind.extension}'
+    image_url = await DriverPostRepository.s3_upload(
+        contents=contents, 
+        key=file_name, 
+        content_type=file.content_type, 
+        acl='public-read'
+    )
+
+    await DriverPostRepository.upload_image(post_id, image_url)
+
+    return UploadImageResponse(message="Image uploaded successfully.", image_url=image_url)
