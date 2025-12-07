@@ -101,7 +101,7 @@ async def delete_post_by_post_id(post_id: str):
 async def delete_post_by_driver_id(driver_id: str):
     try:
         await DriverPostRepository.delete_post_by_driver_id(driver_id)
-        return f"Driver post with id {post_id} deleted successfully."
+        return f"Driver post with driver_id {driver_id} deleted successfully."
     except HTTPException as http_exc:
         raise http_exc
     
@@ -115,6 +115,23 @@ async def request_driver_post(
         return DriverPostReturnDTO.model_validate(updated_post).model_dump()
     except HTTPException as http_exc:
         raise http_exc
+
+@router.patch("/unmatch/client/{client_id}", response_class=PlainTextResponse)
+async def unmatch_posts_by_client_id(client_id: str):
+    try:
+        updated_count = await DriverPostRepository.unmatch_posts_by_client_id(client_id)
+        
+        if updated_count == 0:
+            return PlainTextResponse(
+                f"No matched driver posts found for client_id {client_id} to unmatch.",
+                status_code=200 # 成功執行，但沒有資源被改變
+            )
+        
+        return f"Successfully set {updated_count} driver post(s) to 'open' status for client_id {client_id}."
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.patch("/upload_image", response_model=UploadImageResponse)
 async def upload_image(post_id: str, file: UploadFile | None = None):
