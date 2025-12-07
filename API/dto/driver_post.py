@@ -30,3 +30,30 @@ class DriverPostDTO(BaseModel):
 class UploadImageResponse(BaseModel):
     message: str
     image_url: str | None = None
+
+class DriverPostUpdateDTO(BaseModel):
+    # 要不要讓 client_id 可改，看你業務需求：
+
+    vehicle_info: Optional[str] = None
+    status: Optional[Literal["open", "matched", "closed"]] = None
+
+    time_stamp: Optional[datetime] = Field(None, alias="timestamp")  # 一般我會直接拿掉，不讓改
+
+    start_point: Optional[Dict[str, Any]] = Field(None, alias="starting_point")
+    destination: Optional[Dict[str, Any]] = None
+
+    meet_point: Optional[Dict[str, Any]] = Field(None, alias="meet_point")
+    departure_time: Optional[datetime] = Field(None, alias="departure_time")
+
+    notes: Optional[str] = None
+    description: Optional[str] = None
+    helmet: Optional[bool] = None
+    contact: Optional[Dict[str, str]] = Field(None, alias="contact_info")
+    leave: Optional[bool] = None
+    image_url: Optional[str] = None
+
+    model_config = {
+        "populate_by_name": True,
+        "from_attributes": True,
+    }
+
