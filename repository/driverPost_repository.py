@@ -179,7 +179,7 @@ class DriverPostRepository:
 
     @staticmethod
     async def delete_post_by_driver_id(driver_id: str):
-        query = delete(DriverPost).where(DriverPost.id == driver_id)
+        query = delete(DriverPost).where(DriverPost.driver_id == driver_id)
         try:
             result = await database.execute(query)
             if result == 0:

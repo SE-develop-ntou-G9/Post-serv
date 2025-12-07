@@ -92,7 +92,7 @@ async def delete_all_post():
 @router.delete("/delete/post/{post_id}", response_class=PlainTextResponse)
 async def delete_post_by_post_id(post_id: str):
     try:
-        await DriverPostRepository.delete_post_by_id(post_id)
+        await DriverPostRepository.delete_post_by_post_id(post_id)
         return f"Driver post with id {post_id} deleted successfully."
     except HTTPException as http_exc:
         raise http_exc
@@ -100,7 +100,7 @@ async def delete_post_by_post_id(post_id: str):
 @router.delete("/delete/driver/{driver_id}", response_class=PlainTextResponse)
 async def delete_post_by_driver_id(driver_id: str):
     try:
-        await DriverPostRepository.delete_post_by_id(post_id)
+        await DriverPostRepository.delete_post_by_driver_id(driver_id)
         return f"Driver post with id {post_id} deleted successfully."
     except HTTPException as http_exc:
         raise http_exc
