@@ -160,8 +160,26 @@ class DriverPostRepository:
             )
         
     @staticmethod
-    async def delete_post_by_id(post_id: str):
+    async def delete_post_by_post_id(post_id: str):
         query = delete(DriverPost).where(DriverPost.id == post_id)
+        try:
+            result = await database.execute(query)
+            if result == 0:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Driver post not found"
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete driver post: {str(e)}"
+            )
+
+    @staticmethod
+    async def delete_post_by_driver_id(driver_id: str):
+        query = delete(DriverPost).where(DriverPost.id == driver_id)
         try:
             result = await database.execute(query)
             if result == 0:
