@@ -35,6 +35,15 @@ async def get_all_driver_post():
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.get("/allpost", response_model=List[DriverPostReturnDTO])
+async def get_admin_driver_posts():
+    try:
+        driver_post = await DriverPostRepository.get_admin_driver_posts()
+        # validate and return plain dicts to satisfy FastAPI's response validation
+        return [DriverPostReturnDTO.model_validate(p).model_dump() for p in driver_post]
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.get("/getpost/{post_id}", response_model=DriverPostReturnDTO)
 async def get_post_by_id(post_id: str):
     try:
