@@ -43,10 +43,10 @@ async def get_post_by_id(post_id: str):
     except HTTPException as http_exc:
         raise http_exc
     
-@router.get("/search/{driver_id}", response_model=List[DriverPostDTO])
-async def get_post_by_id(driver_id: str):
+@router.get("/search/{user_id}", response_model=List[DriverPostDTO])
+async def get_post_by_id(user_id: str):
     try:
-        driver_post = await DriverPostRepository.get_post_by_driver_id(driver_id)
+        driver_post = await DriverPostRepository.get_post_by_user_id(user_id)
         return [DriverPostDTO.model_validate(p).model_dump() for p in driver_post]
     except HTTPException as http_exc:
         raise http_exc
@@ -88,6 +88,18 @@ async def delete_post_by_id(post_id: str):
     except HTTPException as http_exc:
         raise http_exc
     
+@router.patch("/request", response_model=DriverPostDTO)
+async def request_driver_post(
+    driver_id: str = Query(None),
+    client_id: str = Query(None),
+    time: datetime = Query(None),
+):
+    try:
+        updated_post = await DriverPostRepository.request_driver_post(driver_id, client_id, time)
+        return DriverPostDTO.model_validate(updated_post).model_dump()
+    except HTTPException as http_exc:
+        raise http_exc
+
 @router.patch("/upload_image", response_model=UploadImageResponse)
 async def upload_image(post_id: str, file: UploadFile | None = None):
     if not file:

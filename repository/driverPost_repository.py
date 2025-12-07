@@ -38,7 +38,7 @@ class DriverPostRepository:
         
     @staticmethod
     async def get_all_driver_posts():
-        query = select(DriverPost)
+        query = select(DriverPost).where(DriverPost.status == "open")
         rows = await database.fetch_all(query)
         return [dict(r) for r in rows]  # 轉成 list[dict]
     
@@ -55,8 +55,9 @@ class DriverPostRepository:
             )
         
     @staticmethod
-    async def get_post_by_driver_id(driver_id: str):
-        query = select(DriverPost).where(DriverPost.driver_id == driver_id)
+    async def get_post_by_user_id(user_id: str):
+        cond = or_(DriverPost.driver_id == user_id, DriverPost.client_id == user_id)
+        query = select(DriverPost).where(cond)
         try:
             rows = await database.fetch_all(query)
             if rows:
@@ -64,7 +65,7 @@ class DriverPostRepository:
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to delete driver posts: {str(e)}"
+                detail=f"Failed to get driver posts by user id: {str(e)}"
             )
         
     @staticmethod
@@ -73,8 +74,6 @@ class DriverPostRepository:
         end_point: Optional[str] = None,
         time: Optional[datetime] = None,
         partial: bool = False,
-        limit: int = 50,
-        offset: int = 0,
     ):
         # JSON extraction helpers
         str_name = func.json_unquote(func.json_extract(DriverPost.start_point, '$.Name'))
@@ -130,6 +129,7 @@ class DriverPostRepository:
                 filters.append(DriverPost.departure_time >= time)
                 filters.append(DriverPost.departure_time <= time + timedelta(hours=5))
 
+        filters.append(DriverPost.status == "open")
         cond = and_(*filters) if filters else true()
 
         query = (
@@ -140,6 +140,7 @@ class DriverPostRepository:
         rows = await database.fetch_all(query)
         return [dict(r) for r in rows]
     
+
 
     @staticmethod
     async def delete_all_post():
@@ -197,7 +198,48 @@ class DriverPostRepository:
                 detail="Failed to upload file to S3",
             )
 
+    @staticmethod
+    async def request_driver_post(driver_id: str, client_id: str, time: datetime):
+        cond = and_(DriverPost.driver_id == driver_id, DriverPost.time_stamp == time)
+        prequery = (
+            select(DriverPost).where(cond)
+        )
+        result = await database.fetch_one(prequery)
 
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Driver post not found"
+            )
+        if result['status'] != 'open':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Driver post is not available for request"
+            )
+        
+        query = (
+            update(DriverPost)
+            .where(cond)
+            .values(status="matched", client_id=client_id)
+        )
+        try:
+            result = await database.execute(query) # Execute the update
+            if result == 0:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Driver post not found"
+                )
+            # Fetch the updated post
+            select_query = select(DriverPost).where(cond) # Fetch the updated post
+            result = await database.fetch_one(select_query) 
+            return dict(result)
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to request driver post: {str(e)}"
+            ) 
     
     @staticmethod
     async def upload_image(post_id: str, image_url: str):

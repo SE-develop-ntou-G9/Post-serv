@@ -5,6 +5,7 @@ from datetime import datetime
 
 class DriverPostDTO(BaseModel):
     driver_id: str
+    client_id: Optional[str] = "unknown"
     vehicle_info: Optional[str] = None
     status: Literal["open", "matched", "closed"] = "open"
 
