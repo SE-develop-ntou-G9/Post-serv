@@ -199,8 +199,8 @@ class DriverPostRepository:
             )
 
     @staticmethod
-    async def request_driver_post(driver_id: str, client_id: str, time: datetime):
-        cond = and_(DriverPost.driver_id == driver_id, DriverPost.time_stamp == time)
+    async def request_driver_post(post_id: str, client_id: str):
+        cond = and_(DriverPost.id == post_id)
         prequery = (
             select(DriverPost).where(cond)
         )
