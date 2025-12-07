@@ -38,7 +38,7 @@ async def get_all_driver_post():
 @router.get("/allpost", response_model=List[DriverPostReturnDTO])
 async def get_admin_driver_posts():
     try:
-        driver_post = await DriverPostRepository.get_all_driver_posts()
+        driver_post = await DriverPostRepository.get_admin_driver_posts()
         # validate and return plain dicts to satisfy FastAPI's response validation
         return [DriverPostReturnDTO.model_validate(p).model_dump() for p in driver_post]
     except Exception as e:
