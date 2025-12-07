@@ -9,7 +9,6 @@ class DriverPostDTO(BaseModel):
     vehicle_info: Optional[str] = None
     status: Literal["open", "matched", "closed"] = "open"
 
-    time_stamp: Optional[datetime] = Field(None, alias="timestamp")
     start_point: Dict[str, Any] = Field(..., alias="starting_point")
     destination: Dict[str, Any]
 
