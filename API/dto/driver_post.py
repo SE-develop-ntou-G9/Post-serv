@@ -56,3 +56,12 @@ class DriverPostUpdateDTO(BaseModel):
         "from_attributes": True,
     }
 
+class DriverPostReturnDTO(DriverPostDTO):
+    id: str
+    time_stamp: Optional[datetime] = Field(None, alias="timestamp")
+
+    model_config = {
+        "populate_by_name": True,
+        "from_attributes": True,
+    }
+
