@@ -264,3 +264,30 @@ class DriverPostRepository:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to upload image: {str(e)}"
             )
+        
+    @staticmethod
+    async def modify_driver_post(post_id: str, updated_fields: dict):
+        query = (
+            update(DriverPost)
+            .where(DriverPost.id == post_id)
+            .values(**updated_fields)
+        )
+
+        try:
+            result = await database.execute(query)
+            if result == 0:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Driver post not found"
+                )
+            # Fetch the updated post
+            select_query = select(DriverPost).where(DriverPost.id == post_id)
+            result = await database.fetch_one(select_query)
+            return dict(result)
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to modify driver post: {str(e)}"
+            )

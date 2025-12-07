@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query, UploadFile
 from fastapi.responses import PlainTextResponse
 from typing import List
-from API.dto.driver_post import DriverPostDTO, UploadImageResponse
+from API.dto.driver_post import DriverPostDTO, DriverPostUpdateDTO, UploadImageResponse
 from repository.driverPost_repository import DriverPostRepository
 from datetime import datetime
 import uuid
@@ -127,3 +127,13 @@ async def upload_image(post_id: str, file: UploadFile | None = None):
     await DriverPostRepository.upload_image(post_id, image_url)
 
     return UploadImageResponse(message="Image uploaded successfully.", image_url=image_url)
+
+@router.patch("/driver_posts/{post_id}")
+async def modify_driver_post(post_id: str, body: DriverPostUpdateDTO):
+    # 只取有傳的欄位
+    try:
+        update_data = body.model_dump(exclude_unset=True)
+        print(post_id)
+        return await DriverPostRepository.modify_driver_post(post_id, update_data)
+    except HTTPException as http_exc:
+        raise http_exc
