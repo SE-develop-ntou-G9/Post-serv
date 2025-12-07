@@ -41,6 +41,12 @@ class DriverPostRepository:
         query = select(DriverPost).where(DriverPost.status == "open")
         rows = await database.fetch_all(query)
         return [dict(r) for r in rows]  # 轉成 list[dict]
+
+    @staticmethod
+    async def get_admin_driver_posts():
+        query = select(DriverPost)
+        rows = await database.fetch_all(query)
+        return [dict(r) for r in rows]  # 轉成 list[dict]
     
     @staticmethod
     async def get_post_by_id(post_id: str):
