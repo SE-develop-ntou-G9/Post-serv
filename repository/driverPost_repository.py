@@ -41,6 +41,12 @@ class DriverPostRepository:
         query = select(DriverPost).where(DriverPost.status == "open")
         rows = await database.fetch_all(query)
         return [dict(r) for r in rows]  # 轉成 list[dict]
+
+    @staticmethod
+    async def get_admin_driver_posts():
+        query = select(DriverPost)
+        rows = await database.fetch_all(query)
+        return [dict(r) for r in rows]  # 轉成 list[dict]
     
     @staticmethod
     async def get_post_by_id(post_id: str):
@@ -154,7 +160,7 @@ class DriverPostRepository:
             )
         
     @staticmethod
-    async def delete_post_by_id(post_id: str):
+    async def delete_post_by_post_id(post_id: str):
         query = delete(DriverPost).where(DriverPost.id == post_id)
         try:
             result = await database.execute(query)
@@ -169,6 +175,55 @@ class DriverPostRepository:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to delete driver post: {str(e)}"
+            )
+
+    @staticmethod
+    async def delete_post_by_driver_id(driver_id: str):
+        query = delete(DriverPost).where(DriverPost.driver_id == driver_id)
+        try:
+            result = await database.execute(query)
+            if result == 0:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Driver post not found"
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete driver post: {str(e)}"
+            )
+
+    @staticmethod
+    async def unmatch_posts_by_client_id(client_id: str):
+        """
+        尋找 client_id 吻合且 status 為 'matched' 的貼文，並將 status 改為 'open'。
+        """
+        # 查詢條件: client_id 相符 且 status 為 'matched'
+        cond = and_(
+            DriverPost.client_id == client_id,
+            DriverPost.status == "matched"
+        )
+        
+        # 進行 UPDATE 操作：將 status 改為 'open'
+        query = (
+            update(DriverPost)
+            .where(cond)
+            .values(status="open", client_id=None) # 將 client_id 設為 None/Null
+        )
+        
+        try:
+            result = await database.execute(query) # result 是受影響的行數
+            if result == 0:
+                 # 雖然沒有貼文被修改，但不一定算 404，因為可能是沒有 matched 的貼文。
+                 # 這裡可以返回受影響的行數，讓路由判斷。
+                return 0
+            return result
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to unmatch driver posts by client id: {str(e)}"
             )
         
     @staticmethod
