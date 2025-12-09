@@ -79,7 +79,7 @@ async def search_destination(
     end_point = _norm(end_point)
 
     posts = await DriverPostRepository.search_destination(start_point, end_point, time, partial=partial)
-    return [DriverPostDTO.model_validate(p).model_dump() for p in posts]
+    return [DriverPostReturnDTO.model_validate(p).model_dump() for p in posts]
     
 @router.delete("/deleteall", response_class=PlainTextResponse)
 async def delete_all_post():
