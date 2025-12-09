@@ -32,6 +32,7 @@ class UploadImageResponse(BaseModel):
 
 class DriverPostUpdateDTO(BaseModel):
     # 要不要讓 client_id 可改，看你業務需求：
+    client_id: Optional[str] = None
 
     vehicle_info: Optional[str] = None
     status: Optional[Literal["open", "matched", "closed"]] = None
