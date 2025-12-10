@@ -169,3 +169,19 @@ async def modify_driver_post(post_id: str, body: DriverPostUpdateDTO):
         return await DriverPostRepository.modify_driver_post(post_id, update_data)
     except HTTPException as http_exc:
         raise http_exc
+    
+@router.get("/count/open", response_model=int)
+async def count_driver_posts():
+    try:
+        count = await DriverPostRepository.open_post_quantity()
+        return count
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@router.get("/count/matched", response_model=int)
+async def count_matched_driver_posts():
+    try:
+        count = await DriverPostRepository.matched_post_quantity()
+        return count
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

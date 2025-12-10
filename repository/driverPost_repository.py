@@ -346,3 +346,27 @@ class DriverPostRepository:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to modify driver post: {str(e)}"
             )
+        
+    @staticmethod
+    async def open_post_quantity():
+        query = select(func.count(DriverPost.id)).where(DriverPost.status == "open")
+        try:
+            result = await database.fetch_one(query)
+            return result[0] if result else 0
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to get post quantity: {str(e)}"
+            )
+    
+    @staticmethod
+    async def matched_post_quantity():
+        query = select(func.count(DriverPost.id)).where(DriverPost.status == "matched")
+        try:
+            result = await database.fetch_one(query)
+            return result[0] if result else 0
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to get matched post quantity: {str(e)}"
+            )
